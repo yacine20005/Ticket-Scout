@@ -94,7 +94,7 @@ async function main() {
   console.log(`Status: [${result.state}]`);
   console.log(`Observed Price: ${result.observedPrice || 'N/A'}`);
   console.log(`Raw Text: ${result.observedRawText || 'N/A'}`);
-  console.log(`Duration: ${durationMs} ms`);
+  console.log(`Total Duration (including jitter): ${(durationMs / 1000).toFixed(1)} s`);
   console.log(`Alerts Sent Total: ${updatedState.alertCount}`);
   if (result.errorMessage) {
     console.log(`Reason / Error: ${result.errorMessage}`);
