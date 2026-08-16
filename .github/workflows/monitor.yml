@@ -1,0 +1,53 @@
+name: TicketScout Monitor
+
+on:
+  schedule:
+    # 1. Late night check (03:15 AM UTC / ~05:15 AM Paris - low competition window)
+    - cron: '15 3 * * *'
+    # 2. Midday check (11:30 AM UTC / ~13:30 PM Paris)
+    - cron: '30 11 * * *'
+    # 3. Evening check (19:15 PM UTC / ~21:15 PM Paris)
+    - cron: '15 19 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Restore Persistent State File
+        uses: actions/cache/restore@v4
+        with:
+          path: data/state.json
+          key: ticket-scout-state-${{ github.run_id }}
+          restore-keys: |
+            ticket-scout-state-
+
+      - name: Install Dependencies & Chromium
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run TicketScout Monitor
+        env:
+          EVENT_URL: ${{ secrets.EVENT_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          HEADLESS: 'true'
+          MAX_JITTER_SECONDS: '900' # Up to 15 min random delay
+        run: npm run monitor -- --jitter
+
+      - name: Save Updated State File
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/state.json
+          key: ticket-scout-state-${{ github.run_id }}
