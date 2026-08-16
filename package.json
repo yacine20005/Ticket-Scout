@@ -9,10 +9,17 @@
     "monitor:force": "tsx src/index.ts --force",
     "monitor:dry": "tsx src/index.ts --dry-run",
     "monitor:reset": "tsx src/index.ts --reset",
+    "test:webhook": "tsx src/test-webhook.ts",
     "test": "vitest run",
     "build": "tsc"
   },
-  "keywords": ["ticket-scout", "playwright", "monitoring", "accor-arena", "discord-webhook"],
+  "keywords": [
+    "ticket-scout",
+    "playwright",
+    "monitoring",
+    "accor-arena",
+    "discord-webhook"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
