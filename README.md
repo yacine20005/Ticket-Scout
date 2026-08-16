@@ -7,6 +7,22 @@
 
 ---
 
+## 🕒 Strategic & Randomized Scheduling (Anti-Pattern / Night Checks)
+
+To maximize chances of catching resale tickets before others while avoiding predictable bot polling patterns, TicketScout combines **strategic low-competition time windows** with **randomized standard-deviation schedule jitter (±60 minutes)**:
+
+1. **Night-time Check (~03:15 AM - 04:15 AM Paris Time)**:
+   - Target window when buyers and scalpers are sleeping in France, leaving newly re-released tickets available for longer.
+2. **Midday Check (~11:30 AM - 12:30 PM Paris Time)**:
+   - Covers morning administrative resale releases.
+3. **Evening Check (~19:15 PM - 20:15 PM Paris Time)**:
+   - Covers end-of-day box office cancellations.
+4. **Randomized Delay (Systemd & Code Jitter)**:
+   - `RandomizedDelaySec=3600` in `ticket-scout.timer` shifts execution times naturally.
+   - `MAX_JITTER_SECONDS` in `.env` or `--jitter` flag calculates Box-Muller Gaussian jitter in code.
+
+---
+
 ## 📐 Architecture & Execution Flow
 
 ```
@@ -24,9 +40,15 @@
                                YES                          NO
                                 /                             \
               +---------------------------------+   +----------------------------------+
-              | ⛔ Halt Execution & Trigger     |   | 🚀 Launch Playwright Persistent  |
-              |   Safety Lock (Protect VPS IP)  |   |   Context (System Chromium)      |
+              | ⛔ Halt Execution & Trigger     |   | 🎲 Apply Random Schedule Jitter  |
+              |   Safety Lock (Protect VPS IP)  |   |   (Box-Muller Normal Variance)   |
               +---------------------------------+   +----------------+-----------------+
+                                                                     |
+                                                                     v
+                                                    +----------------------------------+
+                                                    | 🚀 Launch Playwright Context     |
+                                                    |   (System Chromium Binary)       |
+                                                    +----------------+-----------------+
                                                                      |
                                                                      v
                                                     +----------------------------------+
