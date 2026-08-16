@@ -1,0 +1,29 @@
+{
+  "name": "ticket-scout",
+  "version": "1.0.0",
+  "description": "TicketScout - Passive read-only ticket availability monitor for Accor Arena & events",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "monitor": "tsx src/index.ts",
+    "monitor:force": "tsx src/index.ts --force",
+    "monitor:dry": "tsx src/index.ts --dry-run",
+    "monitor:reset": "tsx src/index.ts --reset",
+    "test": "vitest run",
+    "build": "tsc"
+  },
+  "keywords": ["ticket-scout", "playwright", "monitoring", "accor-arena", "discord-webhook"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "playwright": "^1.50.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

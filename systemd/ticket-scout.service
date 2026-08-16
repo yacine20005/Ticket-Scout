@@ -1,0 +1,16 @@
+[Unit]
+Description=TicketScout - Don Toliver FOSSE Ticket Monitor Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/opt/ticket-scout
+ExecStart=/usr/bin/npm run monitor
+EnvironmentFile=/opt/ticket-scout/.env
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
