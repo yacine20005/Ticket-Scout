@@ -1,6 +1,6 @@
 # 🎫 TicketScout
 
-**TicketScout** is a lightweight, read-only, passive ticket availability monitor built in TypeScript with [Playwright](https://playwright.dev/). It is designed to periodically monitor ticket categories—specifically the **FOSSE** (standing floor) category for high-demand events like the *Don Toliver concert at Accor Arena (Paris)* and dispatch instant Discord notifications upon state transitions.
+**TicketScout** is a lightweight, read-only, passive ticket availability monitor built in TypeScript with [Playwright](https://playwright.dev/). It is designed to periodically monitor ticket categories specifically the **FOSSE** (standing floor) category for high-demand events like the *Don Toliver concert at Accor Arena (Paris)* and dispatch instant Discord notifications upon state transitions.
 
 > [!IMPORTANT]
 > **Ethical & Safety Policy:** TicketScout is strictly a passive observation tool. It **never** purchases tickets, adds items to cart, solves CAPTCHAs, bypasses authentication, rotates proxies, or performs aggressive polling. If anti-bot protections or HTTP restrictions (401/403/429) are encountered, TicketScout immediately halts execution, records a `BLOCKED` status, and engages a **Safety Lock** to protect your VPS IP address from bans.
