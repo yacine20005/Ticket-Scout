@@ -1,5 +1,11 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "api/monitor.ts",
+      "use": "@vercel/node"
+    }
+  ],
   "crons": [
     {
       "path": "/api/monitor",
