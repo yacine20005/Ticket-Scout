@@ -1,6 +1,4 @@
-import { chromium as playwrightChromium, BrowserContext, Page } from 'playwright';
-import { chromium as playwrightCoreChromium } from 'playwright-core';
-import chromiumSparticuz from '@sparticuz/chromium';
+import { chromium, BrowserContext, Page } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { config } from './config.js';
@@ -12,74 +10,48 @@ export interface RunBrowserCheckOptions {
 }
 
 /**
- * Executes a single browser navigation check.
- * Automatically adapts between Vercel Serverless environment (@sparticuz/chromium)
- * and local/VPS environment (system Chromium / Playwright persistent context).
+ * Executes a single browser navigation check using Playwright persistent context.
+ * Guarantees context closure in a try...finally block.
  */
 export async function executeBrowserCheck(options: RunBrowserCheckOptions = {}): Promise<{
   result: CheckResult;
   screenshotPath: string | null;
 }> {
-  const isVercelServerless = process.env.VERCEL === '1' || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+  console.log('[BROWSER] Launching persistent Chromium context...');
+
+  if (!fs.existsSync(config.browserProfileDir)) {
+    fs.mkdirSync(config.browserProfileDir, { recursive: true });
+  }
+  if (!fs.existsSync(config.screenshotDir)) {
+    fs.mkdirSync(config.screenshotDir, { recursive: true });
+  }
+
   let context: BrowserContext | null = null;
   let screenshotPath: string | null = null;
 
+  // Use system Chromium binary if available to pass EPS fingerprint check
+  const systemChromiumPath = fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined;
+  if (systemChromiumPath) {
+    console.log('[INFO] Using system Chromium binary (/usr/bin/chromium)');
+  }
+
   try {
-    if (isVercelServerless) {
-      console.log('[BROWSER] Launching Vercel Serverless Chromium instance...');
-      const executablePath = await chromiumSparticuz.executablePath();
-      
-      const browser = await playwrightCoreChromium.launch({
-        args: [
-          ...chromiumSparticuz.args,
-          '--disable-blink-features=AutomationControlled',
-          '--no-sandbox',
-        ],
-        executablePath,
-        headless: true,
-      });
-
-      context = await browser.newContext({
-        viewport: { width: 1366, height: 768 },
-        userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        locale: 'fr-FR',
-        timezoneId: 'Europe/Paris',
-        extraHTTPHeaders: {
-          'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-        },
-      });
-    } else {
-      console.log('[BROWSER] Launching local/VPS persistent Chromium context...');
-
-      if (!fs.existsSync(config.browserProfileDir)) {
-        fs.mkdirSync(config.browserProfileDir, { recursive: true });
-      }
-      if (!fs.existsSync(config.screenshotDir)) {
-        fs.mkdirSync(config.screenshotDir, { recursive: true });
-      }
-
-      const systemChromiumPath = fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined;
-      if (systemChromiumPath) {
-        console.log('[INFO] Using system Chromium binary (/usr/bin/chromium)');
-      }
-
-      context = await playwrightChromium.launchPersistentContext(config.browserProfileDir, {
-        executablePath: systemChromiumPath,
-        headless: config.headless,
-        viewport: { width: 1366, height: 768 },
-        userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        locale: 'fr-FR',
-        timezoneId: 'Europe/Paris',
-        extraHTTPHeaders: {
-          'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-        },
-        args: [
-          '--disable-blink-features=AutomationControlled',
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-        ],
-      });
-    }
+    context = await chromium.launchPersistentContext(config.browserProfileDir, {
+      executablePath: systemChromiumPath,
+      headless: config.headless,
+      viewport: { width: 1366, height: 768 },
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      locale: 'fr-FR',
+      timezoneId: 'Europe/Paris',
+      extraHTTPHeaders: {
+        'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+      },
+      args: [
+        '--disable-blink-features=AutomationControlled',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+      ],
+    });
 
     const page: Page = context.pages()[0] || (await context.newPage());
 
@@ -114,16 +86,14 @@ export async function executeBrowserCheck(options: RunBrowserCheckOptions = {}):
       console.log(`[INFO] Reason / Error: ${result.errorMessage}`);
     }
 
-    // Capture screenshot if local disk directory exists
-    if (!isVercelServerless) {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      screenshotPath = path.join(config.screenshotDir, `check-${result.state.toLowerCase()}-${timestamp}.png`);
-      
-      await page.screenshot({ path: screenshotPath, fullPage: true }).catch(err => {
-        console.warn('Could not take screenshot:', err.message);
-        screenshotPath = null;
-      });
-    }
+    // Capture screenshot
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    screenshotPath = path.join(config.screenshotDir, `check-${result.state.toLowerCase()}-${timestamp}.png`);
+    
+    await page.screenshot({ path: screenshotPath, fullPage: true }).catch(err => {
+      console.warn('Could not take screenshot:', err.message);
+      screenshotPath = null;
+    });
 
     return { result, screenshotPath };
 
