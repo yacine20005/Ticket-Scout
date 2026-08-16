@@ -14,13 +14,13 @@ export async function sendDiscordNotification(
 ): Promise<boolean> {
   const webhookUrl = config.discordWebhookUrl;
   if (!webhookUrl) {
-    console.log('ℹ️ DISCORD_WEBHOOK_URL is not configured. Skipping Discord notification.');
+    console.log('[INFO] DISCORD_WEBHOOK_URL is not configured. Skipping Discord notification.');
     return false;
   }
 
   // Mask webhook secret in logs
   const maskedUrl = webhookUrl.replace(/webhooks\/(\d+)\/([\w-]+)/, 'webhooks/$1/****');
-  console.log(`📡 Dispatching Discord Webhook notification to ${maskedUrl}...`);
+  console.log(`[DISCORD] Dispatching Discord Webhook notification to ${maskedUrl}...`);
 
   let title = '';
   let color = 0x3498DB; // Blue default
@@ -29,29 +29,29 @@ export async function sendDiscordNotification(
 
   switch (result.state) {
     case 'AVAILABLE':
-      title = '🚨 FOSSE TICKETS AVAILABLE!';
+      title = 'FOSSE TICKETS AVAILABLE!';
       color = 0x2ECC71; // Green
-      contentText = '@everyone 🎟️ **FOSSE tickets are now available for Don Toliver at Accor Arena!**';
+      contentText = '@everyone [ALERT] FOSSE tickets are now available for Don Toliver at Accor Arena!';
       description = `**Observed Status:** \`AVAILABLE\`\n**Price:** ${result.observedPrice || 'N/A'}\n**Link:** [Accor Arena Ticketing Page](${config.eventUrl})`;
       break;
 
     case 'BLOCKED':
-      title = '⚠️ TECHNICAL ALERT: BLOCKED STATUS DETECTED';
+      title = 'TECHNICAL ALERT: BLOCKED STATUS DETECTED';
       color = 0xE74C3C; // Red
-      contentText = '⚠️ **Monitoring Interrupted - Anti-abuse protection or CAPTCHA challenge detected.**';
+      contentText = '[ALERT] Monitoring Interrupted - Anti-abuse protection or CAPTCHA challenge detected.';
       description = `**Status:** \`BLOCKED\`\n**Reason:** ${result.errorMessage || 'HTTP restriction / Anti-bot / Queue-it'}\n\n*Automated monitoring is halted until manual reset or override.*`;
       break;
 
     case 'UNKNOWN':
-      title = '❓ ALERT: UNKNOWN PAGE STATE DETECTED';
+      title = 'ALERT: UNKNOWN PAGE STATE DETECTED';
       color = 0xF1C40F; // Yellow
-      contentText = '❓ **FOSSE category state could not be interpreted from DOM.**';
+      contentText = '[ALERT] FOSSE category state could not be interpreted from DOM.';
       description = `**Previous Status:** \`${previousState || 'UNKNOWN'}\`\n**New Status:** \`UNKNOWN\`\n**Reason:** ${result.errorMessage || 'Modified or ambiguous DOM layout'}`;
       break;
 
     default:
       title = `Update: ${result.state}`;
-      description = `State transition detected: ${previousState} ➡️ ${result.state}`;
+      description = `State transition detected: ${previousState} -> ${result.state}`;
   }
 
   const embed = {
@@ -88,7 +88,7 @@ export async function sendDiscordNotification(
       });
 
       if (!res.ok) {
-        console.error(`❌ Failed to send Discord Webhook: HTTP ${res.status} ${res.statusText}`);
+        console.error(`[ERROR] Failed to send Discord Webhook: HTTP ${res.status} ${res.statusText}`);
         return false;
       }
     } else {
@@ -99,15 +99,15 @@ export async function sendDiscordNotification(
       });
 
       if (!res.ok) {
-        console.error(`❌ Failed to send Discord Webhook: HTTP ${res.status} ${res.statusText}`);
+        console.error(`[ERROR] Failed to send Discord Webhook: HTTP ${res.status} ${res.statusText}`);
         return false;
       }
     }
 
-    console.log('✅ Discord notification sent successfully.');
+    console.log('[SUCCESS] Discord notification sent successfully.');
     return true;
   } catch (err: any) {
-    console.error('❌ Error sending Discord notification:', err.message);
+    console.error('[ERROR] Error sending Discord notification:', err.message);
     return false;
   }
 }

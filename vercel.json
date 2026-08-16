@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "crons": [
+    {
+      "path": "/api/monitor",
+      "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/monitor",
+      "schedule": "30 11 * * *"
+    },
+    {
+      "path": "/api/monitor",
+      "schedule": "15 19 * * *"
+    }
+  ]
+}

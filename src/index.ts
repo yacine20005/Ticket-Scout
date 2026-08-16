@@ -10,18 +10,15 @@ import { config } from './config.js';
 function getRandomJitterSeconds(maxSeconds: number): number {
   if (maxSeconds <= 0) return 0;
   
-  // Box-Muller transform for normal distribution
   let u = 0, v = 0;
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
   let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
   
-  // Normalize mean to maxSeconds / 2 with standard deviation maxSeconds / 6
   const mean = maxSeconds / 2;
   const stdDev = maxSeconds / 6;
   let result = Math.round(mean + num * stdDev);
   
-  // Clamp within [0, maxSeconds]
   return Math.max(0, Math.min(maxSeconds, result));
 }
 
@@ -33,11 +30,11 @@ async function main() {
   const reset = args.includes('--reset');
   const applyJitterFlag = args.includes('--jitter');
 
-  console.log('🎫 === TicketScout - Ticket Availability Monitor ===');
+  console.log('=== TicketScout - Ticket Availability Monitor ===');
   console.log(`Execution Time: ${new Date().toISOString()}`);
 
   if (reset) {
-    console.log('🔄 Resetting persistent state file...');
+    console.log('[RESET] Resetting persistent state file...');
     saveState({
       lastState: null,
       lastCheckDateISO: null,
@@ -46,27 +43,26 @@ async function main() {
       alertCount: 0,
       lastErrorReason: null,
     });
-    console.log('✅ State reset successfully.');
+    console.log('[SUCCESS] State reset successfully.');
     return;
   }
 
-  // Calculate random schedule jitter if configured or requested via flag
   const effectiveMaxJitter = applyJitterFlag ? (config.maxJitterSeconds || 3600) : config.maxJitterSeconds;
   if (effectiveMaxJitter > 0) {
     const jitterSec = getRandomJitterSeconds(effectiveMaxJitter);
     const jitterMin = (jitterSec / 60).toFixed(1);
-    console.log(`🎲 Applying random schedule jitter: sleeping for ${jitterSec}s (~${jitterMin} min) before check...`);
+    console.log(`[JITTER] Applying random schedule jitter: sleeping for ${jitterSec}s (~${jitterMin} min) before check...`);
     await new Promise(resolve => setTimeout(resolve, jitterSec * 1000));
   }
 
   const previousState = loadState();
-  console.log(`📌 Previous State: [${previousState.lastState || 'NONE'}] | Last Check: ${previousState.lastCheckDateISO || 'Never'}`);
+  console.log(`[STATE] Previous State: [${previousState.lastState || 'NONE'}] | Last Check: ${previousState.lastCheckDateISO || 'Never'}`);
 
   // Safety lock: if state is BLOCKED, refuse to re-run without --force
   if (previousState.lastState === 'BLOCKED' && !force) {
-    console.error('⛔ SAFETY LOCK ACTIVATED: The previous execution ended in state BLOCKED.');
-    console.error('⛔ Automated execution halted to protect VPS IP from anti-bot bans.');
-    console.error('💡 Run with `--force` or `--reset` to override the safety lock after manual verification.');
+    console.error('[SAFETY LOCK] ACTIVATED: The previous execution ended in state BLOCKED.');
+    console.error('[SAFETY LOCK] Automated execution halted to protect VPS IP from anti-bot bans.');
+    console.error('[HINT] Run with `--force` or `--reset` to override the safety lock after manual verification.');
     process.exit(1);
   }
 
@@ -76,14 +72,14 @@ async function main() {
   let alertSent = false;
 
   if (didAlertConditionMet) {
-    console.log(`🔔 Alert condition triggered for state transition: ${previousState.lastState || 'NONE'} ➡️ ${result.state}`);
+    console.log(`[ALERT] Alert condition triggered for state transition: ${previousState.lastState || 'NONE'} -> ${result.state}`);
     if (dryRun) {
-      console.log('🧪 --dry-run mode enabled: Discord webhook suppressed.');
+      console.log('[DRY-RUN] --dry-run mode enabled: Discord webhook suppressed.');
     } else {
       alertSent = await sendDiscordNotification(result, previousState.lastState, screenshotPath);
     }
   } else {
-    console.log(`ℹ️ State unchanged or no alert required (${previousState.lastState} ➡️ ${result.state}). No notification sent.`);
+    console.log(`[INFO] State unchanged or no alert required (${previousState.lastState} -> ${result.state}). No notification sent.`);
   }
 
   const updatedState = updateStateWithResult(previousState, result, alertSent);
@@ -102,6 +98,6 @@ async function main() {
 }
 
 main().catch(err => {
-  console.error('💥 Unhandled CLI exception:', err);
+  console.error('[FATAL] Unhandled CLI exception:', err);
   process.exit(1);
 });
