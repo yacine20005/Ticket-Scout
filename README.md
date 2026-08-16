@@ -85,58 +85,6 @@ To maximize chances of catching resale tickets before others while avoiding pred
 
 ---
 
-## 🗂️ File & Module Structure
-
-```
-ticket-scout/
-├── .env.example            # Environment variables template
-├── .gitignore              # Ignores secrets, persistent browser profile, screenshots, state
-├── package.json            # npm package dependencies and CLI scripts
-├── tsconfig.json           # TypeScript ESM configuration
-├── src/
-│   ├── types.ts            # Core TypeScript interfaces (MonitorState, CheckResult, PersistentState)
-│   ├── config.ts           # Environment schema validation with Zod
-│   ├── parser.ts           # Resilient HTML parsing & anti-bot challenge detection
-│   ├── state.ts            # State persistence management & transition alert evaluation
-│   ├── browser.ts          # Playwright context launcher & screenshot generator
-│   ├── notifier.ts         # Discord Webhook integration with rich embeds & attachments
-│   ├── index.ts            # Main CLI entry point (`npm run monitor`)
-│   └── inspect.ts          # Dry-run inspection script for debugging DOM selectors
-├── tests/
-│   └── parser.test.ts      # Vitest unit test suite covering all 4 state scenarios
-├── systemd/
-│   ├── ticket-scout.service# Systemd service unit template for Linux VPS
-│   └── ticket-scout.timer  # Systemd timer unit template (2x daily schedule)
-└── data/                   # Persistent storage directory (git-ignored)
-    ├── browser-profile/    # Persistent Chromium user profile & cookies
-    ├── screenshots/        # Full-page screenshots captured on state changes or errors
-    └── state.json          # JSON file storing last check state and history
-```
-
----
-
-## 🔄 State Machine & Transition Rules
-
-TicketScout evaluates page data into one of four deterministic states:
-
-| State | Description | Alert Triggered? |
-| :--- | :--- | :--- |
-| **`SOLD_OUT`** | The FOSSE row is found and explicitly marked as `Épuisé` / `Sold Out`. | No (Default baseline state) |
-| **`AVAILABLE`** | Interactive controls (`<select>`, active add-to-cart buttons, `Disponible`) detected. | **YES** (Sends `@everyone` Discord alert) |
-| **`BLOCKED`** | HTTP 401/403/429 or anti-abuse page (`<abuse-component>`, Queue-it, reCAPTCHA challenge) detected. | **YES** (Sends single technical alert) |
-| **`UNKNOWN`** | The FOSSE label is missing or the DOM structure cannot be reliably interpreted. | **YES** (Only if previous state was valid) |
-
----
-
-## 🛡️ Anti-Bot Strategy (EPS & F5 Bot Defense)
-
-Accor Arena ticketing utilizes **Entrust / EPS / F5 Distributed Cloud Bot Defense**. 
-
-- **Why default Playwright Headless failed:** Bundled Playwright `chromium_headless_shell` binaries expose specific automation flags (`HeadlessChrome`), triggering an HTTP `401` challenge block page (`<abuse-component>`).
-- **How TicketScout resolves it:** TicketScout automatically detects and uses the **system Chromium binary (`/usr/bin/chromium`)** with realistic window dimensions, French locale, and a persistent browser profile directory (`data/browser-profile`). This allows client-side JS challenges to evaluate naturally without using stealth plugins, proxies, or CAPTCHA solvers.
-
----
-
 ## 🛠️ Local Installation & Setup
 
 ### 1. Prerequisites
@@ -166,6 +114,7 @@ BROWSER_PROFILE_DIR=data/browser-profile
 STATE_FILE=data/state.json
 SCREENSHOT_DIR=data/screenshots
 HEADLESS=true
+MAX_JITTER_SECONDS=3600
 ```
 
 ---
@@ -175,6 +124,7 @@ HEADLESS=true
 | Command | Description |
 | :--- | :--- |
 | `npm run monitor` | Standard single execution check. Respects Safety Lock if previous state was `BLOCKED`. |
+| `npm run monitor -- --jitter` | Runs check applying random Gaussian timing delay before navigation. |
 | `npm run monitor:dry` | Runs monitoring check in `--dry-run` mode (suppresses Discord notifications). |
 | `npm run monitor:force` | Runs monitoring check overriding previous `BLOCKED` Safety Lock (`--force`). |
 | `npm run monitor:reset` | Resets `data/state.json` back to initial clean state (`--reset`). |
@@ -204,8 +154,6 @@ Copy the unit files to `/etc/systemd/system/`:
 sudo cp systemd/ticket-scout.service /etc/systemd/system/
 sudo cp systemd/ticket-scout.timer /etc/systemd/system/
 ```
-
-> **Note:** Ensure `User=` and `WorkingDirectory=` in `/etc/systemd/system/ticket-scout.service` match your VPS user and installation path.
 
 ### Step 3: Enable & Start Systemd Timer
 ```bash
