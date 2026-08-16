@@ -1,10 +1,18 @@
 [Unit]
-Description=TicketScout - Don Toliver FOSSE Ticket Monitor Timer (2x per day)
+Description=TicketScout - Randomized Ticket Availability Monitor Timer (3x Daily)
 
 [Timer]
-OnCalendar=*-*-* 09:00:00
-OnCalendar=*-*-* 19:00:00
-RandomizedDelaySec=300
+# 1. Late night check (3:15 AM Paris time - low competition window)
+OnCalendar=*-*-* 03:15:00
+
+# 2. Midday check (11:30 AM Paris time - morning drop window)
+OnCalendar=*-*-* 11:30:00
+
+# 3. Evening check (19:15 PM Paris time - evening drop window)
+OnCalendar=*-*-* 19:15:00
+
+# Adds a random delay up to 60 minutes (3600s) to randomize execution time
+RandomizedDelaySec=3600
 Persistent=true
 
 [Install]
