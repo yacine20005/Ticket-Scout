@@ -31,6 +31,7 @@ async function main() {
   const force = args.includes('--force');
   const dryRun = args.includes('--dry-run');
   const reset = args.includes('--reset');
+  const applyJitterFlag = args.includes('--jitter');
 
   console.log('🎫 === TicketScout - Ticket Availability Monitor ===');
   console.log(`Execution Time: ${new Date().toISOString()}`);
@@ -47,6 +48,15 @@ async function main() {
     });
     console.log('✅ State reset successfully.');
     return;
+  }
+
+  // Calculate random schedule jitter if configured or requested via flag
+  const effectiveMaxJitter = applyJitterFlag ? (config.maxJitterSeconds || 3600) : config.maxJitterSeconds;
+  if (effectiveMaxJitter > 0) {
+    const jitterSec = getRandomJitterSeconds(effectiveMaxJitter);
+    const jitterMin = (jitterSec / 60).toFixed(1);
+    console.log(`🎲 Applying random schedule jitter: sleeping for ${jitterSec}s (~${jitterMin} min) before check...`);
+    await new Promise(resolve => setTimeout(resolve, jitterSec * 1000));
   }
 
   const previousState = loadState();
