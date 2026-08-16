@@ -25,7 +25,7 @@ To maximize chances of catching resale tickets before others while avoiding pred
 
 ## Architecture & Execution Flow
 
-```
+```text
                                  +-------------------------+
                                  |  npm run monitor (CLI)  |
                                  +------------+------------+
@@ -88,11 +88,13 @@ To maximize chances of catching resale tickets before others while avoiding pred
 ## Local Installation & Setup
 
 ### 1. Prerequisites
+
 - **Node.js** v18+ / v20+ / v22+
 - **npm** v9+
 - **Chromium** installed on host OS (`/usr/bin/chromium`)
 
 ### 2. Clone & Install
+
 ```bash
 git clone <repository-url> ticket-scout
 cd ticket-scout
@@ -101,12 +103,15 @@ npx playwright install chromium
 ```
 
 ### 3. Environment Configuration
+
 Copy `.env.example` to `.env`:
+
 ```bash
 cp .env.example .env
 ```
 
 Configure `.env` with your Discord Webhook URL and target event:
+
 ```env
 EVENT_URL=https://billetterie.accorarena.com/fr/manifestation/don-toliver-billet/idmanif/663654/idseance/4361281/codtypadh/FTT/numadh/01/codeconf/FTMS01
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
@@ -136,6 +141,7 @@ MAX_JITTER_SECONDS=3600
 ## Production Deployment (Ubuntu VPS via Systemd Timer)
 
 ### Step 1: Install System Dependencies on Ubuntu VPS
+
 ```bash
 sudo apt update && sudo apt install -y nodejs npm git chromium-browser
 sudo mkdir -p /opt/ticket-scout
@@ -149,19 +155,23 @@ npx playwright install-deps chromium
 ```
 
 ### Step 2: Configure Systemd Service & Timer
+
 Copy the unit files to `/etc/systemd/system/`:
+
 ```bash
 sudo cp systemd/ticket-scout.service /etc/systemd/system/
 sudo cp systemd/ticket-scout.timer /etc/systemd/system/
 ```
 
 ### Step 3: Enable & Start Systemd Timer
+
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now ticket-scout.timer
 ```
 
 ### Step 4: Monitor & Inspect Logs
+
 ```bash
 # Check timer status and next scheduled run
 sudo systemctl status ticket-scout.timer
