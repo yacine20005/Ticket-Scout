@@ -7,7 +7,7 @@
 
 ---
 
-## 🕒 Strategic & Randomized Scheduling (Anti-Pattern / Night Checks)
+## Strategic & Randomized Scheduling (Anti-Pattern / Night Checks)
 
 To maximize chances of catching resale tickets before others while avoiding predictable bot polling patterns, TicketScout combines **strategic low-competition time windows** with **randomized standard-deviation schedule jitter (±60 minutes)**:
 
@@ -23,7 +23,7 @@ To maximize chances of catching resale tickets before others while avoiding pred
 
 ---
 
-## 📐 Architecture & Execution Flow
+## Architecture & Execution Flow
 
 ```
                                  +-------------------------+
@@ -40,24 +40,24 @@ To maximize chances of catching resale tickets before others while avoiding pred
                                YES                          NO
                                 /                             \
               +---------------------------------+   +----------------------------------+
-              | ⛔ Halt Execution & Trigger     |   | 🎲 Apply Random Schedule Jitter  |
+              |   Halt Execution & Trigger      |   |    Apply Random Schedule Jitter  |
               |   Safety Lock (Protect VPS IP)  |   |   (Box-Muller Normal Variance)   |
               +---------------------------------+   +----------------+-----------------+
                                                                      |
                                                                      v
                                                     +----------------------------------+
-                                                    | 🚀 Launch Playwright Context     |
+                                                    |    Launch Playwright Context     |
                                                     |   (System Chromium Binary)       |
                                                     +----------------+-----------------+
                                                                      |
                                                                      v
                                                     +----------------------------------+
-                                                    | 🌐 Navigate to Target Ticket URL |
+                                                    |   Navigate to Target Ticket URL  |
                                                     +----------------+-----------------+
                                                                      |
                                                                      v
                                                     +----------------------------------+
-                                                    | 🔍 Execute Resilient DOM Parser  |
+                                                    |   Execute Resilient DOM Parser   |
                                                     |   (parseHtmlContent in parser.ts)|
                                                     +----------------+-----------------+
                                                                      |
@@ -73,19 +73,19 @@ To maximize chances of catching resale tickets before others while avoiding pred
                                                    YES                      NO
                                                    /                         \
                                  +-----------------------------------+   +-----------------------+
-                                 | 📡 Dispatch Discord Webhook Embed |   | ℹ️ Log Output &       |
+                                 |   Dispatch Discord Webhook Embed  |   |   Log Output &        |
                                  |   (With Attached Screenshot)      |   |   Skip Notification   |
                                  +----------------+------------------+   +-----------+-----------+
                                                   \                         /
                                                    v                       v
                                         +---------------------------------------------+
-                                        | 💾 Update & Persist State in data/state.json|
+                                        |  Update & Persist State in data/state.json  |
                                         +---------------------------------------------+
 ```
 
 ---
 
-## 🛠️ Local Installation & Setup
+## Local Installation & Setup
 
 ### 1. Prerequisites
 - **Node.js** v18+ / v20+ / v22+
@@ -119,7 +119,7 @@ MAX_JITTER_SECONDS=3600
 
 ---
 
-## 💻 CLI Commands & Usage
+## CLI Commands & Usage
 
 | Command | Description |
 | :--- | :--- |
@@ -133,7 +133,7 @@ MAX_JITTER_SECONDS=3600
 
 ---
 
-## 🐧 Production Deployment (Ubuntu VPS via Systemd Timer)
+## Production Deployment (Ubuntu VPS via Systemd Timer)
 
 ### Step 1: Install System Dependencies on Ubuntu VPS
 ```bash
