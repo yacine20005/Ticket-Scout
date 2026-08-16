@@ -42,7 +42,7 @@ jobs:
           EVENT_URL: ${{ secrets.EVENT_URL }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           HEADLESS: 'true'
-          MAX_JITTER_SECONDS: '900' # Up to 15 min random delay
+          MAX_JITTER_SECONDS: '3600' # Up to 60 min random delay
         run: npm run monitor -- --jitter
 
       - name: Save Updated State File
