@@ -1,13 +1,6 @@
 name: TicketScout Monitor
 
 on:
-  schedule:
-    # 1. Late night check (03:15 AM UTC / ~05:15 AM Paris - low competition window)
-    - cron: '15 3 * * *'
-    # 2. Midday check (11:30 AM UTC / ~13:30 PM Paris)
-    - cron: '30 11 * * *'
-    # 3. Evening check (19:15 PM UTC / ~21:15 PM Paris)
-    - cron: '15 19 * * *'
   workflow_dispatch: # Allows instant manual trigger from GitHub UI anytime
 
 jobs:

@@ -1,4 +1,4 @@
-import { chromium, BrowserContext, Page } from 'playwright';
+import { chromium, BrowserContext, Page } from 'patchright';
 import fs from 'fs';
 import path from 'path';
 import { config } from './config.js';
@@ -10,14 +10,42 @@ export interface RunBrowserCheckOptions {
 }
 
 /**
- * Executes a single browser navigation check using Playwright persistent context.
+ * Retains only the most recent N screenshots to prevent disk space saturation.
+ */
+function rotateScreenshots(maxKeep: number = 10): void {
+  try {
+    if (!fs.existsSync(config.screenshotDir)) return;
+    const files = fs.readdirSync(config.screenshotDir)
+      .filter(file => file.endsWith('.png'))
+      .map(file => {
+        const filePath = path.join(config.screenshotDir, file);
+        return { name: file, path: filePath, time: fs.statSync(filePath).mtimeMs };
+      })
+      .sort((a, b) => b.time - a.time);
+
+    if (files.length > maxKeep) {
+      for (const excessFile of files.slice(maxKeep)) {
+        try {
+          fs.unlinkSync(excessFile.path);
+        } catch {
+          // ignore individual deletion errors
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn('[WARNING] Screenshot cleanup warning:', err.message);
+  }
+}
+
+/**
+ * Executes a single browser navigation check using Patchright (stealth-patched Chromium).
  * Guarantees context closure in a try...finally block.
  */
 export async function executeBrowserCheck(options: RunBrowserCheckOptions = {}): Promise<{
   result: CheckResult;
   screenshotPath: string | null;
 }> {
-  console.log('[BROWSER] Launching persistent Chromium context...');
+  console.log('[BROWSER] Launching stealth Patchright Chromium context...');
 
   if (!fs.existsSync(config.browserProfileDir)) {
     fs.mkdirSync(config.browserProfileDir, { recursive: true });
@@ -29,27 +57,31 @@ export async function executeBrowserCheck(options: RunBrowserCheckOptions = {}):
   let context: BrowserContext | null = null;
   let screenshotPath: string | null = null;
 
-  // Use system Chromium binary if available to pass EPS fingerprint check
-  const systemChromiumPath = fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined;
-  if (systemChromiumPath) {
-    console.log('[INFO] Using system Chromium binary (/usr/bin/chromium)');
-  }
-
   try {
     context = await chromium.launchPersistentContext(config.browserProfileDir, {
-      executablePath: systemChromiumPath,
       headless: config.headless,
       viewport: { width: 1366, height: 768 },
-      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
       locale: 'fr-FR',
       timezoneId: 'Europe/Paris',
       extraHTTPHeaders: {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Sec-Ch-Ua': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Linux"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
       },
       args: [
-        '--disable-blink-features=AutomationControlled',
         '--no-sandbox',
         '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled',
+        '--disable-infobars',
+        '--window-size=1366,768',
       ],
     });
 
@@ -86,7 +118,7 @@ export async function executeBrowserCheck(options: RunBrowserCheckOptions = {}):
       console.log(`[INFO] Reason / Error: ${result.errorMessage}`);
     }
 
-    // Capture screenshot
+    // Capture screenshot and apply retention policy (keep last 10)
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     screenshotPath = path.join(config.screenshotDir, `check-${result.state.toLowerCase()}-${timestamp}.png`);
     
@@ -94,6 +126,8 @@ export async function executeBrowserCheck(options: RunBrowserCheckOptions = {}):
       console.warn('Could not take screenshot:', err.message);
       screenshotPath = null;
     });
+
+    rotateScreenshots(10);
 
     return { result, screenshotPath };
 
