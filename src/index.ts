@@ -1,6 +1,29 @@
 import { loadState, saveState, updateStateWithResult, shouldSendAlert } from './state.js';
 import { executeBrowserCheck } from './browser.js';
 import { sendDiscordNotification } from './notifier.js';
+import { config } from './config.js';
+
+/**
+ * Calculates a Gaussian / Standard Deviation random delay within [0, maxSeconds].
+ * Uses Box-Muller transform for realistic natural variance around mean.
+ */
+function getRandomJitterSeconds(maxSeconds: number): number {
+  if (maxSeconds <= 0) return 0;
+  
+  // Box-Muller transform for normal distribution
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  
+  // Normalize mean to maxSeconds / 2 with standard deviation maxSeconds / 6
+  const mean = maxSeconds / 2;
+  const stdDev = maxSeconds / 6;
+  let result = Math.round(mean + num * stdDev);
+  
+  // Clamp within [0, maxSeconds]
+  return Math.max(0, Math.min(maxSeconds, result));
+}
 
 async function main() {
   const startTime = Date.now();
