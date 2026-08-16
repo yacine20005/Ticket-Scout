@@ -8,7 +8,7 @@ on:
     - cron: '30 11 * * *'
     # 3. Evening check (19:15 PM UTC / ~21:15 PM Paris)
     - cron: '15 19 * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+  workflow_dispatch: # Allows instant manual trigger from GitHub UI anytime
 
 jobs:
   monitor:
@@ -42,8 +42,8 @@ jobs:
           EVENT_URL: ${{ secrets.EVENT_URL }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           HEADLESS: 'true'
-          MAX_JITTER_SECONDS: '3600' # Up to 60 min random delay
-        run: npm run monitor -- --jitter
+        # Run instant check without in-process jitter sleep to minimize runner duration (~7s)
+        run: npm run monitor
 
       - name: Save Updated State File
         if: always()
