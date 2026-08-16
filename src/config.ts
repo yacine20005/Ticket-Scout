@@ -15,6 +15,7 @@ const envSchema = z.object({
   STATE_FILE: z.string().default('data/state.json'),
   SCREENSHOT_DIR: z.string().default('data/screenshots'),
   HEADLESS: z.string().default('true').transform(val => val !== 'false'),
+  MAX_JITTER_SECONDS: z.string().default('0').transform(val => Math.max(0, parseInt(val, 10) || 0)),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -36,4 +37,5 @@ export const config = {
   stateFile: path.resolve(rootDir, parsedEnv.data.STATE_FILE),
   screenshotDir: path.resolve(rootDir, parsedEnv.data.SCREENSHOT_DIR),
   headless: parsedEnv.data.HEADLESS,
+  maxJitterSeconds: parsedEnv.data.MAX_JITTER_SECONDS,
 };
